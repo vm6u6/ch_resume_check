@@ -1,0 +1,1 @@
+## According the STAR priciple
