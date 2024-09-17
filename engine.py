@@ -23,14 +23,14 @@ class LLM_engine():
             ('user', 'Question: {input}'),
         ])
 
-    def read_pdf(self, path="中文履歷.pdf"):
+    def read_pdf(self, path):
         loader = PyPDFLoader(path)
         docs = loader.load()
         content_list = [Document(page_content=line.strip()) for line in docs[0].page_content.split('\n') if line.strip()]
 
         text_splitter = CharacterTextSplitter(chunk_size=20, chunk_overlap=5)
-        documents = text_splitter.split_documents(docs) 
-        vectordb = FAISS.from_documents(docs, self.embeddings)
+        documents = text_splitter.split_documents(content_list) 
+        vectordb = FAISS.from_documents(documents, self.embeddings)
         self.retriever = vectordb.as_retriever()
         return
 

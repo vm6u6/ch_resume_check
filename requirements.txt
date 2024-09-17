@@ -1,0 +1,4 @@
+matplotlib
+PyMuPDF
+docx2pdf
+reportlab
