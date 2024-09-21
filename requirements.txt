@@ -2,3 +2,5 @@ matplotlib
 PyMuPDF
 docx2pdf
 reportlab
+langchain
+sentence-transformers
