@@ -7,10 +7,13 @@ from tqdm import tqdm
 from summarize import summarize_resume
 from modified import modified_resume
 from output_newLayer import output_newLayer
+from doc_preprocessing import preprocess_resume
 
 class ch_resume_checker():
     def __init__(self):
         self.LLM = LLM_engine()
+
+        self.preprocess_tool = preprocess_resume()
 
         self.summerize_tool = summarize_resume()
 
@@ -23,17 +26,23 @@ class ch_resume_checker():
         documents = self.LLM.read_pdf(path)
         retrieval_chain = self.LLM.run()
 
-        
-        
-        print("======================= [ SUMMARIZED ] =======================")
-        summerized_section = self.summerize_tool.parse_resume(documents, retrieval_chain)
-        for i in tqdm(summerized_section):
+        print("======================= [ PREPROCESSING ] =======================")
+        preprocess_section = self.preprocess_tool.parse_resume(documents, retrieval_chain)
+        for i in tqdm(preprocess_section):
             print("[INFO] KEY: ", i)
-            print("[INFO] VALUE: ", summerized_section[i])
+            print("[INFO] VALUE: ", preprocess_section[i])
             print()
 
+        
+        # print("======================= [ SUMMARIZED ] =======================")
+        # summerized_section = self.summerize_tool.parse_resume(documents, retrieval_chain)
+        # for i in tqdm(summerized_section):
+        #     print("[INFO] KEY: ", i)
+        #     print("[INFO] VALUE: ", summerized_section[i])
+        #     print()
+
         # print("======================= [ MODIFIED ] =======================")
-        # modified_section = self.modified_tool.modify_resume(input_text, retrieval_chain, summerized_section)
+        # modified_section = self.modified_tool.modify_resume(documents, retrieval_chain, summerized_section)
         # for i in tqdm(modified_section):
         #     print(modified_section[i])
         #     print()

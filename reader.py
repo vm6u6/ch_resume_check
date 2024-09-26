@@ -1,7 +1,3 @@
-from pypdf import PdfReader
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import FAISS
 from langchain.schema import Document
 
 import os
@@ -56,41 +52,7 @@ class WordToPDFConverter:
         except Exception as e:
             print(f"An error occurred during conversion: {e}")
 
-
-class EnhancedPDFLoader():
-    def __init__(self):
-        print("EnhancedPDFLoader")
-
-    def read_pdf(self, path):
-        loader = PyPDFLoader(path)
-        docs = loader.load()
-        content_list = [Document(page_content=line.strip()) for line in docs[0].page_content.split('\n') if line.strip()]
-        text_splitter = CharacterTextSplitter(chunk_size=20, chunk_overlap=5)
-        documents = text_splitter.split_documents(content_list) 
-        print(documents)
-        return documents
-
-    def extract_font_sizes(self, page):
-        font_sizes = {}
-        for obj in page['/Resources']['/Font'].values():
-            if hasattr(obj, 'get'):
-                font = obj.get('/BaseFont', 'Unknown')
-                size = obj.get('/FontDescriptor', {}).get('/FontBBox', [0, 0, 0, 0])[3]
-                font_sizes[font] = size
-        return font_sizes
-
-    def is_likely_title(self, line, font_size, threshold=1.2):
-        if font_size > threshold:
-            return True
-        if line.isupper() and len(line.split()) <= 5:
-            return True
-        if line.istitle() and len(line.split()) <= 7:
-            return True
-        return False
-    
 if __name__ == "__main__":
     path = "中文履歷.pdf"
 
-    # reader = EnhancedPDFLoader()
-    # reader.read_pdf(path)
 

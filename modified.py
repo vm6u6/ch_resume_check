@@ -37,7 +37,8 @@ class modified_resume():
         return response
          
 
-    def modify_resume(self, resume_text, retrieval_chain, summarized_sections):
+    def modify_resume(self, resume_documents, retrieval_chain, summarized_sections):
+        resume_text = " ".join([doc.page_content for doc in resume_documents])
 
         for section, content in summarized_sections.items():
             if section in self.star_prompts:

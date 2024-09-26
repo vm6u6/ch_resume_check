@@ -2,3 +2,5 @@ token_openai.txt
 token_hugging_face.txt
 *.pdf
 *.png
+tmp.ipynb
+./data
