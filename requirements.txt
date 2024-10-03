@@ -4,3 +4,4 @@ docx2pdf
 reportlab
 langchain
 sentence-transformers
+jieba

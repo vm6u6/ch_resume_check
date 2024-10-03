@@ -1,6 +1,6 @@
 ## Resume checker
 
-Finetune LLama3(int4) on Chinese dataset (colab)
+Finetune LLama3(int4) by Axolotl+qLoRA
 
 Env setting:
 ```python
