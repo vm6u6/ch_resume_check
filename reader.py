@@ -28,7 +28,7 @@ class read_pdf_splitter():
         self.prompt = PromptTemplate(
             input_variables=["resume"],
             template="""
-            请分析以下中文履历文本，并将其分割成主要部分。对于每个部分，提供一个标题和相应的内容，内容靠近的东西会比较容易在同一个标题下。
+            请分析以下中文履历文本，并将其分割成主要部分。对于每个部分，提供一个标题和相应的内容，内容靠近的东西会比较容易在同一个标题下，尤其是文本末尾的内容。对于每个部分，提供一个準確的[標題]和完整的相應內容，[不要省略]任何內容。
             以JSON格式返回结果，格式如下，有具體描述內容以及工作時間的標記為工作經歷：
             {{
                 "sections": [
@@ -78,13 +78,13 @@ class read_pdf_splitter():
 
     def llm_split_content(self, resume_text):
         response = self.chain.run(resume=resume_text)
-        print(response)
+        print("[INFO] Response: ", response)
 
         try:
             result = json.loads(response)
             sections = [(section['title'], section['content']) for section in result['sections']]
-
         except json.JSONDecodeError:
+            print("[INFO] Manual splitting...")
             sections = self._manual_split(response)
         
         return sections

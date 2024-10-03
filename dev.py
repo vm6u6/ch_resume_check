@@ -22,7 +22,6 @@ class ch_resume_checker():
 
         print("======================= [ PREPROCESSING ] =======================")
         content_list = self.preprocess_tool.read_pdf(path)
-
         preprocess_section_json = self.preprocess_tool.llm_split_content(content_list)
         print(preprocess_section_json)
         quit()
