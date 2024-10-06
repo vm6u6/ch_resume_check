@@ -4,3 +4,5 @@ token_hugging_face.txt
 *.png
 tmp.ipynb
 ./data
+./llm_responses
+*.txt

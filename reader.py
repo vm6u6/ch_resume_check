@@ -21,41 +21,56 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import json
 from typing import List, Tuple
+from datetime import datetime
+import logging
+import ast
+import re
 
 class read_pdf_splitter():
     def __init__(self, llm_model):
         self.llm = llm_model
-        self.prompt = PromptTemplate(
+        self.prompt_response = PromptTemplate(
             input_variables=["resume"],
             template="""
-            请分析以下中文履历文本，并将其分割成主要部分。对于每个部分，提供一个标题和相应的内容，内容靠近的东西会比较容易在同一个标题下，尤其是文本末尾的内容。对于每个部分，提供一个準確的[標題]和完整的相應內容，[不要省略]任何內容。
+            请分析以下中文履历文本，并将其分割成主要部分。对于每个部分，提供一个标题和相应的内容，内容靠近的东西会比较容易在同一个标题下，尤其是文本末尾的内容。对于每个部分，提供一个準確的[標題]和完整的相應內容，[不要省略任何內容]。
             以JSON格式返回结果，格式如下，有具體描述內容以及工作時間的標記為工作經歷：
             {{
                 "sections": [
-                    {{"title": "姓名"     , "content": "部分内容0"}},
-                    {{"title": "部分标题1", "content": "部分内容1"}},
-                    {{"title": "部分标题2", "content": "部分内容2"}},
-                    {{"title": "網站連結" , "content": "部分内容3"}},
+                    {{"title": "姓名"     , "content": "内容0"}},
+                    {{"title": "部分标题1", "content": "内容1"}},
+                    {{"title": "部分标题2", "content": "内容2"}},
+                    {{"title": "網站連結" , "content": "内容3"}},
                     ...
                 ]
             }}
-            
+            检查JSON格式是否正确。如果存在格式错误，请修正它们 确保转换过程中[不遗漏任何原始资讯]。
+
             履历文本：
             {resume}
             """
         )
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
-    # def read_pdf(self, path):
-    #     loader = PyPDFLoader(path)
-    #     docs = loader.load()
-    #     res = [Document(page_content=line.strip()) for line in docs[0].page_content.split('\n') if line.strip()]
+        self.chain_response = LLMChain(llm=self.llm, prompt=self.prompt_response)
 
-    #     merge_res = ''
-    #     for i in res:
-    #         str = i.page_content
-    #         merge_res += str
-    #     return merge_res
+
+        self.response_dir = "llm_responses"
+        if not os.path.exists(self.response_dir):
+            os.makedirs(self.response_dir)
+
+    def _save_to_txt(self, response):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{self.response_dir}/llm_response_{timestamp}.txt"
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(response)
+        logging.info(f"Response saved to file: {filename}")
+
+    def _load_latest_response(self):
+        files = [f for f in os.listdir(self.response_dir) if f.startswith("llm_response_") and f.endswith(".txt")]
+        if not files:
+            return None
+        latest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.response_dir, x)))
+        with open(os.path.join(self.response_dir, latest_file), 'r', encoding='utf-8') as f:
+            return f.read()
     
     def read_pdf(self, path):
         laparams = LAParams(line_overlap=0.5, char_margin=2.0, line_margin=0.5, word_margin=0.1)
@@ -76,38 +91,44 @@ class read_pdf_splitter():
 
         return chunks
 
-    def llm_split_content(self, resume_text):
-        response = self.chain.run(resume=resume_text)
-        print("[INFO] Response: ", response)
-
+    def parse_response(self, response_str):
+        response_str = response_str.strip()
+        response_str = re.sub(r'^```json\s*|```$', '', response_str, flags=re.MULTILINE)
+        response_str = response_str.replace('"""', '').replace("'''", "")
+        # print(response_str)
         try:
-            result = json.loads(response)
-            sections = [(section['title'], section['content']) for section in result['sections']]
-        except json.JSONDecodeError:
-            print("[INFO] Manual splitting...")
-            sections = self._manual_split(response)
-        
-        return sections
+            data = json.loads(response_str)
+        except:
+            data = ast.literal_eval(response_str.strip())
+        # print(data)
 
-    def _manual_split(self, text: str) -> List[Tuple[str, str]]:
-        lines = text.split('\n')
-        sections = []
-        current_title = ""
-        current_content = []
+        resume = {}
 
-        for line in lines:
-            if line.strip().startswith(("部分标题", "标题")):
-                if current_title:
-                    sections.append((current_title, '\n'.join(current_content)))
-                current_title = line.split(':', 1)[-1].strip()
-                current_content = []
-            elif line.strip().startswith("内容:"):
-                current_content.append(line.split(':', 1)[-1].strip())
+        # Iterate through the sections
+        for section in data['sections']:
+            title = section['title']
+            content = section.get('content')
+
+            # Handle nested sections (like work experience)
+            if 'sections' in section:
+                subsections = []
+                for subsection in section['sections']:
+                    subsections.append({
+                        'title': subsection['title'],
+                        'content': subsection['content']
+                    })
+                resume[title] = subsections
             else:
-                current_content.append(line.strip())
+                resume[title] = content
+        return resume
 
-        if current_title:
-            sections.append((current_title, '\n'.join(current_content)))
+    def llm_split_content(self, resume_text):
+        # response = self.chain_response.run(resume=resume_text)
+        # print("[INFO] Response: ", response)
+        # self._save_to_txt(response)
+
+        response = self._load_latest_response()
+        sections = self.parse_response(response)
 
         return sections
 

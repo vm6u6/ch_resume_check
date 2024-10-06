@@ -22,16 +22,14 @@ class ch_resume_checker():
 
         print("======================= [ PREPROCESSING ] =======================")
         content_list = self.preprocess_tool.read_pdf(path)
-        preprocess_section_json = self.preprocess_tool.llm_split_content(content_list)
-        print(preprocess_section_json)
-        quit()
+        preprocess_section_dict= self.preprocess_tool.llm_split_content(content_list)
         
-        # print("======================= [ SUMMARIZED ] =======================")
-        # summerized_section = self.summerize_tool.parse_resume(documents, retrieval_chain)
-        # for i in tqdm(summerized_section):
-        #     print("[INFO] KEY: ", i)
-        #     print("[INFO] VALUE: ", summerized_section[i])
-        #     print()
+        print("======================= [ SUMMARIZED ] =======================")
+        summerized_section = self.summerize_tool.parse_resume(preprocess_section_dict, retrieval_chain)
+        for i in tqdm(summerized_section):
+            print("[INFO] KEY: ", i)
+            print("[INFO] VALUE: ", summerized_section[i])
+            print()
 
         # print("======================= [ MODIFIED ] =======================")
         # modified_section = self.modified_tool.modify_resume(documents, retrieval_chain, summerized_section)
